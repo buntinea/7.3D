@@ -1,0 +1,77 @@
+import RPi.GPIO as GPIO
+import time
+
+
+
+
+
+GPIO.setmode(GPIO.BCM)
+
+echo = 14
+trig = 15
+ledPower = 18
+
+
+GPIO.setup(echo,GPIO.IN)
+GPIO.setup(trig,GPIO.OUT)
+GPIO.setup(ledPower,GPIO.OUT) 
+
+
+pwm = GPIO.PWM(ledPower,100)
+pwm.start(0)
+
+
+#The ranges below are the values i want the sensor to record. The minRange records 100% brightness
+#while the maxRange is 100%
+
+minRange = 10 # i decided to make it 10cms as it becomes less acurate after this
+maxRange = 310
+
+
+
+
+
+def distance():
+    
+    GPIO.output(trig,True)
+    time.sleep(0.00001)
+    GPIO.output(trig,False)
+    
+    startTime = time.time() 
+    stopTime = time.time()
+    
+    while GPIO.input(echo) == 0:
+        startTime = time.time()
+        
+    while GPIO.input(echo) == 1:
+        stopTime = time.time()
+        
+    
+    timeDifference = stopTime - startTime
+    
+    return (timeDifference*34300)/2 #distance
+
+def keepinRange(percentage):
+    if percentage > 100:
+        return abs(((maxRange*100)/(maxRange - minRange)) - 100) #for example, if the maxValue int is smaller than the actual reading on the sensor
+    if percentage < 0:
+         return 0
+    
+    return percentage
+
+
+
+    
+        
+try:
+    while True:
+        brightness = keepinRange(abs(((distance()*100)/(maxRange - minRange)) - 100))
+        print(brightness)
+        pwm.ChangeDutyCycle(brightness)
+        #print(distance())
+        time.sleep(0.1)
+    
+except KeyboardInterrupt:
+    GPIO.cleanup()
+        
+    
